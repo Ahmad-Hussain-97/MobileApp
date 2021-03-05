@@ -11,91 +11,100 @@ import {
   ScrollView,
   SafeAreaView,
   StatusBar,
+  Alert
 } from 'react-native';
 import * as Animatable from 'react-native-animatable';
 import LinearGradient from 'react-native-linear-gradient';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Feather from 'react-native-vector-icons/Feather';
+import InitDrawer from './InitDrawer';
+import { GoogleSignin } from '@react-native-community/google-signin';
+GoogleSignin.configure({
+  webClientId: '591164342234-sdnnn2gm19m8v9adlmocefqsfrid7slt.apps.googleusercontent.com',
+});
+
+import auth from '@react-native-firebase/auth';
+
+async function onGoogleButtonPress() {
+  // Get the users ID token
+  const { idToken } = await GoogleSignin.signIn();
+
+  // Create a Google credential with the token
+  const googleCredential = auth.GoogleAuthProvider.credential(idToken);
+
+  // Sign-in the user with the credential
+  return auth().signInWithCredential(googleCredential);
+
+}
 
 
 const Register = ({navigation}) => {
-  const [data, setData] = React.useState({
-    username: '',
-    password: '',
-    email: '',
-    category: '',
-    confirm_password: '',
-    check_textInputChange: false,
-    username_check_textInputChange: false,
-    secureTextEntry: true,
-    confirm_secureTextEntry: true,
-  });
 
-  const [newemail, setnewemail] = useState('');
-  const [newpass, setnewpass] = useState('');
+  const [email, setemail] = useState('');
+  const [password, setpassword] = useState('');
+  const [confirm_password, setconfirm_password] = useState('');
+  const [check_textInputChange, setcheck_textInputChange] = useState(false);
+  const [secureTextEntry, setsecureTextEntry] = useState(true);
+  const [confirm_secureTextEntry, setconfirm_secureTextEntry] = useState(true);
+
   const textInputChange = (val) => {
-    setnewemail(val)
+    
     if (val.length !== 0) {
-      setData({
-        ...data,
-        email: val,
-        check_textInputChange: true,
-      });
+      setemail(val);
+      setcheck_textInputChange(true);
     } else {
-      setData({
-        ...data,
-        email: val,
-        check_textInputChange: false,
-      });
+      setcheck_textInputChange(false);
     }
   };
 
-  const username_textInputChange = (val) => {
-    if (val.length !== 0) {
-      setData({
-        ...data,
-        username: val,
-        username_check_textInputChange: true,
-      });
-    } else {
-      setData({
-        ...data,
-        username: val,
-        username_check_textInputChange: false,
-      });
-    }
-  };
+
 
   const handlePasswordChange = (val) => {
-    setnewpass(val) 
-    setData({
-      ...data,
-      password: val,
-    });
+    setpassword(val);
   };
 
   const handleConfirmPasswordChange = (val) => {
-    setData({
-      ...data,
-      confirm_password: val,
-    });
+    setconfirm_password(val);
   };
 
+  const dosePasswordMatches = () =>{
+    if(confirm_password !== password){
+      Alert.alert('Error','Re-confirm your password. Please make sure your password match.',["OK"]);
+    }
+  }
+
   const updateSecureTextEntry = () => {
-    setData({
-      ...data,
-      secureTextEntry: !data.secureTextEntry,
-    });
+    setsecureTextEntry(!secureTextEntry);
   };
 
   const updateConfirmSecureTextEntry = () => {
-    setData({
-      ...data,
-      confirm_secureTextEntry: !data.confirm_secureTextEntry,
-    });
+   setconfirm_secureTextEntry(!confirm_secureTextEntry);
   };
+  
+  const handleSignUp = () => {
+    auth()
+        .createUserWithEmailAndPassword(email, password)
+        .then(() => {Alert.alert('Congrats!','The account has been created successfully. Login by using the same credentails.',["OK"]); navigation.navigate('Login')})
+        .catch(error => {   
+          switch(error.code) {
+            case 'auth/email-already-in-use':
+                  Alert.alert('Error','This email is already in use. Try another one!',["OK"])
+                  break;
+            case 'auth/weak-password':
+                  Alert.alert('Error','The given password is invalid.[ Password should be at least 6 characters ]',["OK"])
+                  break;
+            case 'auth/user-not-found':
+                  Alert.alert('Error','There is no user record corresponding to this identifier.',["OK"])
+                  break;
+          default:
+              Alert.alert('Error',error.message,["OK"])
+              break;
+         }
+       })
+  };  
 
   return (
+     
     <View style={styles.container}>
       <StatusBar backgroundColor="#009387" barStyle="light-content" />
       <View style={styles.header}>
@@ -103,26 +112,12 @@ const Register = ({navigation}) => {
       </View>
       <Animatable.View animation="fadeInUpBig" style={styles.footer}>
         <ScrollView>
-          <Text style={styles.text_footer}>Username</Text>
-          <View style={styles.action}>
-            <FontAwesome name="user-o" color="#05375a" size={20} />
-            <TextInput
-              placeholder="Type Your Username"
-              style={styles.textInput}
-              autoCapitalize="none"
-              onChangeText={(val) => username_textInputChange(val)}
-            />
-            {data.username_check_textInputChange ? (
-              <Animatable.View animation="bounceIn">
-                <Feather name="check-circle" color="green" size={20} />
-              </Animatable.View>
-            ) : null}
-          </View>
+
           <Text
             style={[
               styles.text_footer,
               {
-                marginTop: 25,
+                marginTop:3,
               },
             ]}>
             Email
@@ -135,14 +130,13 @@ const Register = ({navigation}) => {
               autoCapitalize="none"
               onChangeText={(val) => textInputChange(val)}
             />
-            {data.check_textInputChange ? (
+            {check_textInputChange ? (
               <Animatable.View animation="bounceIn">
                 <Feather name="check-circle" color="green" size={20} />
               </Animatable.View>
             ) : null}
           </View>
           
-
           <Text
             style={[
               styles.text_footer,
@@ -156,13 +150,13 @@ const Register = ({navigation}) => {
             <Feather name="lock" color="#05375a" size={20} />
             <TextInput
               placeholder="Type Your Password"
-              secureTextEntry={data.secureTextEntry ? true : false}
+              secureTextEntry={secureTextEntry ? true : false}
               style={styles.textInput}
               autoCapitalize="none"
               onChangeText={(val) => handlePasswordChange(val)}
             />
             <TouchableOpacity onPress={updateSecureTextEntry}>
-              {data.secureTextEntry ? (
+              {secureTextEntry ? (
                 <Feather name="eye-off" color="grey" size={20} />
               ) : (
                 <Feather name="eye" color="grey" size={20} />
@@ -183,13 +177,13 @@ const Register = ({navigation}) => {
             <Feather name="lock" color="#05375a" size={20} />
             <TextInput
               placeholder="Confirm Your Password"
-              secureTextEntry={data.confirm_secureTextEntry ? true : false}
+              secureTextEntry={confirm_secureTextEntry ? true : false}
               style={styles.textInput}
               autoCapitalize="none"
               onChangeText={(val) => handleConfirmPasswordChange(val)}
             />
             <TouchableOpacity onPress={updateConfirmSecureTextEntry}>
-              {data.secureTextEntry ? (
+              {confirm_secureTextEntry ? (
                 <Feather name="eye-off" color="grey" size={20} />
               ) : (
                 <Feather name="eye" color="grey" size={20} />
@@ -198,7 +192,7 @@ const Register = ({navigation}) => {
           </View>
 
           <View style={styles.button}>
-            <TouchableOpacity style={styles.signIn} >
+            <TouchableOpacity style={styles.signIn} onPress={ handleSignUp} >
               <LinearGradient
                 colors={['#AB2727', '#6b6666']}
                 style={styles.signIn}>
@@ -208,14 +202,20 @@ const Register = ({navigation}) => {
           </View>
 
           <View >
-          <TouchableOpacity  style={{marginTop:20, alignItems:'center' ,justifyContent:'center', flexDirection:'row'}}onPress={()=>{navigation.navigate('Login')}}>
+          <TouchableOpacity  style={{marginTop:15, alignItems:'center' ,justifyContent:'center', flexDirection:'row'}}onPress={() => onGoogleButtonPress().then(() => navigation.navigate("InitDrawer"))}>
               <FontAwesome name="google" size={20}  />
               <Text>  Using Google.</Text>
           </TouchableOpacity>
         </View>
+        <View >
+          <TouchableOpacity  style={{marginTop:15, alignItems:'center' ,justifyContent:'center', flexDirection:'row'}}onPress={()=>{navigation.navigate('PhoneAuthScreen')}}>
+              <FontAwesome name="mobile" size={20}  />
+              <Text>  Using Phone Number.</Text>
+          </TouchableOpacity>
+        </View>
 
         <View >
-          <TouchableOpacity  style={{marginTop:40, alignItems:'center'}}onPress={()=>{navigation.navigate('Login')}}>
+          <TouchableOpacity  style={{marginTop:30, alignItems:'center'}}onPress={()=>{navigation.navigate('Login')}}>
               <Text>  Already have an Account? Login</Text>
           </TouchableOpacity>
         </View>
@@ -234,13 +234,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#AB2727',
   },
   header: {
-    flex: 0.7,
+    flex: 1,
     justifyContent: 'flex-end',
     paddingHorizontal: 20,
     paddingBottom: 30,
   },
   footer: {
-    flex: 2.3,
+    flex: 2,
     backgroundColor: '#fff',
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,

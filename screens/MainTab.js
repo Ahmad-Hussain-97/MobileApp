@@ -7,7 +7,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import Home from './Home';
 import News from './News';
 import Plans from './Plans';
-import Chat from './Chat';
+import StartChat from './StartChat';
 
 const HomeStack = createStackNavigator();
 const NewsStack = createStackNavigator();
@@ -150,7 +150,7 @@ const HomeStackScreen =({navigation}) =>{
         fontWeight:'bold'
       }
     }}>
-      <ChatStack.Screen name="Chat" component={Chat} options={{
+      <ChatStack.Screen name="Chat" component={StartChat} options={{
         title:'Chat',
         headerTitleAlign: 'center',
         headerLeft: ()=>(

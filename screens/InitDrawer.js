@@ -13,7 +13,6 @@ const InitDrawer =()=>{
 
   return(
       <NavigationContainer  independent={true}>
-        
         <Drawer.Navigator drawerContent={props => <DrawerContent { ... props}/>}>
           <Drawer.Screen name="Home" component={MainTab} />
         </Drawer.Navigator>
